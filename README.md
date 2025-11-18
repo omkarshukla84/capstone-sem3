@@ -1,93 +1,103 @@
-# Adaptrix – The JavaScript Marketplace for LoRA Adapters
+# EchoNote – AI-Powered Voice-to-Text Note Management System
 
-Adaptrix is a full-stack ecosystem designed to bring LoRA (Low-Rank Adaptation) adapters into the JavaScript world.
-It provides a local-first marketplace, CLI tool, and npm SDK that developers can use to publish, discover, download, and integrate adapters into any JavaScript or Node.js project.
+EchoNote is an intelligent voice-to-text and AI-driven note management platform built for students, professionals, and creators. It converts spoken content—recorded live or uploaded as audio—into structured, editable, and searchable digital notes. EchoNote integrates transcription, cloud storage, AI summarization, and note organization into one seamless workflow.
 
-This repository currently includes the authentication system using JWT, with more features under development.
+---
 
-## Project Vision
+## 🚀 Features
 
-LoRA adapters are becoming the standard method of fine‑tuning large models efficiently.
-However, the JavaScript ecosystem lacks:
+### 🎙️ Speech-to-Text
+- Live transcription using **Web Speech API**
+- Offline/Uploaded audio transcription using **Vosk**
 
-- A unified place to publish adapters  
-- A searchable discovery engine  
-- A simple CLI installer  
-- A native JS SDK for applying adapters locally  
+### 🤖 AI-Powered Actions
+- Summarize notes
+- Extract key points
+- Rewrite or clean text
+- Powered by **OpenAI GPT/Gemini**
 
-Adaptrix fills this gap by becoming the npm-like marketplace for AI adapters.
+### 📝 Note Management (CRUD)
+- Create, read, update, delete notes
+- Save audio + transcription links
+- Secure cloud storage via **Supabase Buckets**
 
-## System Architecture
+### 🔍 Search & Organization
+- Search notes
+- Sort & filter notes
+- Pagination for large note collections
 
-Frontend: Next.js + React  
-Backend: Node.js + Express  
-Database: Supabase Postgres  
-Storage: Supabase Buckets  
-Auth: Supabase JWT Auth  
-CLI Tool: adaptrix-cli  
-npm SDK: adaptrix-js  
+### 🔐 Authentication
+- JWT-based secure login & protected routes
 
-### Architecture Flow
+---
 
-1. Developers upload LoRA adapters with metadata.
-2. Metadata is stored in Supabase.
-3. Adapter files go into Supabase Buckets.
-4. Users browse adapters via the frontend.
-5. Developers install adapters using the CLI or SDK.
+## 🏗️ System Architecture
 
-## Features (Planned)
+**Frontend:** Next.js + React + Tailwind  
+**Speech Recognition:** Web Speech API (live), Vosk (uploaded audio)  
+**Backend:** Node.js + Express  
+**Database:** Supabase PostgreSQL  
+**Auth:** JWT  
+**AI Integration:** OpenAI / Gemini API  
+**Storage:** Supabase Buckets  
+**Hosting:** Vercel (Frontend), Render/Railway (Backend)
 
-- Upload LoRA adapters  
-- Adapter search & filtering  
-- CLI tool  
-- npm SDK  
-- Versioning system  
-- JWT Authentication (implemented)  
+---
 
-## API Overview (Planned Routes)
+## 📌 System Flow
 
-| Endpoint | Method | Description | Access |
-|---------|--------|-------------|--------|
-| /api/adapters | GET | Fetch all or filtered adapters | Public |
-| /api/adapters/:id | GET | Fetch adapter details | Public |
-| /api/adapters | POST | Upload adapter | Authenticated |
-| /api/adapters/:id/download | GET | Download adapter | Public |
-| /api/auth/login | POST | JWT login | Public |
-| /api/cli/:adapterId | GET | Fetch adapter for CLI | Public |
+### 1️⃣ Live Recording Flow
+1. User logs in (JWT auth).
+2. Clicks **Record Audio**.
+3. Browser transcribes using Web Speech API.
+4. Raw audio recorded via MediaRecorder API.
+5. On stop → text shown instantly + audio stored in Supabase.
+6. User can summarize/extract/modify using AI.
+7. Final note + audio link stored in DB.
 
-## CLI Tool Example (Future)
+### 2️⃣ Audio Upload Flow
+1. User uploads audio file.
+2. File stored in Supabase.
+3. Metadata sent to Node API.
+4. Vosk generates text transcription.
+5. Text displayed for editing.
+6. User saves the note.
 
-```bash
-npm i -g adaptrix-cli
-adaptrix list --model qwen-1.5b
-adaptrix install adapter_id
-```
+### 3️⃣ AI Processing Flow
+1. User selects AI action.
+2. Text sent to backend AI route.
+3. AI returns output to editor.
+4. User saves the final note.
 
-## npm SDK Example (Future)
+---
 
-```javascript
-import { loadAdapter } from "adaptrix-js";
-const adapter = await loadAdapter("adapter_id", { model: "qwen-1.5b" });
-model.applyLoRA(adapter);
-```
+## 🔮 Future Scope
+- Multilingual transcription
+- PWA offline mode
+- “Chat with my notes” via embeddings
+- Smart reminders & calendar sync
+- Analytics dashboard
 
-## Future Scope
+---
 
-- Adapter benchmarking  
-- Dataset transparency  
-- Community ratings  
-- Hybrid LoRA adapters  
-- Local benchmarking suite  
+## 🎯 Why EchoNote Is a Strong Capstone Project
+- Combines **AI + Full Stack + Cloud + Real-time features**
+- Demonstrates usage of:
+  - Node.js
+  - Supabase
+  - JWT auth
+  - Speech APIs
+  - Open-source Vosk
+  - AI models (GPT/Gemini)
+- Scalable into a real SaaS
 
-## Current Status
+---
 
-✔ JWT Authentication Implemented  
-⬜ Adapter Upload  
-⬜ Marketplace Frontend  
-⬜ CLI Tool  
-⬜ npm SDK  
-⬜ Versioning System  
+## ✅ Current Progress
+- JWT Authentication (Completed)
 
-## License
+More modules will be added as the project evolves.
 
-MIT License.
+---
+
+Made with ❤️ by Omkar
