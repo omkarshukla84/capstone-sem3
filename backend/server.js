@@ -49,7 +49,7 @@ const noteSchema = new mongoose.Schema({
 
 const Note = mongoose.model("Note", noteSchema);
 
-
+// console.log(process.env.DATABASE_URL)
 mongoose.connect(process.env.DATABASE_URL)
 .then(() => console.log("Connected to MongoDB"))
 .catch(err => {
