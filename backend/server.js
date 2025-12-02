@@ -4,10 +4,28 @@ import dotenv from "dotenv";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import multer from "multer";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
 dotenv.config();
 
 const app = express();
+
+// Get __dirname equivalent in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Initialize Gemini AI
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+
+// Configure multer for file uploads
+const upload = multer({ 
+  dest: 'uploads/',
+  limits: { fileSize: 100 * 1024 * 1024 } // 100MB limit
+});
 
 //Scehma
 const userSchema = new mongoose.Schema({
@@ -18,6 +36,18 @@ const userSchema = new mongoose.Schema({
 });
 
 const User = mongoose.model("User", userSchema);
+
+// Note Schema
+const noteSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  title: { type: String, required: true },
+  content: { type: String },
+  summary: { type: String },
+  tags: { type: [String], default: ["Live Recording"] },
+  date: { type: Date, default: Date.now },
+});
+
+const Note = mongoose.model("Note", noteSchema);
 
 
 mongoose.connect(process.env.DATABASE_URL)
@@ -102,6 +132,250 @@ app.get("/api/dashboard", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(401).json({ error: "Invalid token" });
+  }
+});
+
+// --- Notes API ---
+
+// Middleware to verify token
+// Middleware to verify token
+const authenticateToken = (req, res, next) => {
+  console.log("Auth Middleware Hit");
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    console.log("No token provided");
+    return res.sendStatus(401);
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) {
+      console.log("Token verification failed:", err.message);
+      return res.sendStatus(403);
+    }
+    console.log("Token verified for user:", user.id);
+    req.user = user;
+    next();
+  });
+};
+
+// Create a new note
+app.post("/api/notes", authenticateToken, async (req, res) => {
+  try {
+    console.log("Creating new note:", req.body);
+    const { title, content, tags } = req.body;
+    const newNote = new Note({
+      userId: req.user.id,
+      title,
+      content,
+      summary: req.body.summary || "",
+      tags: tags || ["Live Recording"]
+    });
+    const savedNote = await newNote.save();
+    console.log("Note saved successfully:", savedNote._id);
+    res.status(201).json(savedNote);
+  } catch (err) {
+    console.error("Error saving note:", err);
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Get all notes for user with filtering, sorting, pagination, and search
+app.get("/api/notes", authenticateToken, async (req, res) => {
+  try {
+    const { filter, sort, page = 1, limit = 6, search } = req.query;
+    const query = { userId: req.user.id };
+
+    // Filtering
+    if (filter && filter !== 'All') {
+      query.tags = { $in: [filter] };
+    }
+
+    // Search
+    if (search) {
+      query.title = { $regex: search, $options: 'i' };
+    }
+
+    // Sorting
+    const sortOption = { date: sort === 'oldest' ? 1 : -1 };
+
+    // Pagination
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const skip = (pageNum - 1) * limitNum;
+
+    const totalNotes = await Note.countDocuments(query);
+    const notes = await Note.find(query)
+      .sort(sortOption)
+      .skip(skip)
+      .limit(limitNum);
+
+    res.json({
+      notes,
+      currentPage: pageNum,
+      totalPages: Math.ceil(totalNotes / limitNum),
+      totalNotes
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get a single note by ID
+app.get("/api/notes/:id", authenticateToken, async (req, res) => {
+  try {
+    const note = await Note.findOne({ _id: req.params.id, userId: req.user.id });
+    if (!note) return res.status(404).json({ error: "Note not found" });
+    res.json(note);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Update a note
+app.put("/api/notes/:id", authenticateToken, async (req, res) => {
+  try {
+    const { title, content, tags } = req.body;
+    const updatedNote = await Note.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user.id },
+      { title, content, tags, summary: req.body.summary },
+      { new: true }
+    );
+    if (!updatedNote) return res.status(404).json({ error: "Note not found" });
+    res.json(updatedNote);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// AI Query endpoint
+app.post("/api/notes/:id/ai", authenticateToken, async (req, res) => {
+  try {
+    const { query, action } = req.body;
+    const note = await Note.findOne({ _id: req.params.id, userId: req.user.id });
+    
+    if (!note) return res.status(404).json({ error: "Note not found" });
+    
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ error: "Gemini API key not configured" });
+    }
+
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    
+    let prompt;
+    if (action === "summary") {
+      prompt = `Please provide a concise summary of the following note:\n\nTitle: ${note.title}\n\nContent: ${note.content}`;
+    } else {
+      prompt = `Based on this note:\n\nTitle: ${note.title}\n\nContent: ${note.content}\n\nQuestion: ${query}`;
+    }
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+
+    res.json({ response: text });
+  } catch (err) {
+    console.error("AI Error:", err);
+    res.status(500).json({ error: "Failed to generate AI response" });
+  }
+});
+
+// Delete a note
+app.delete("/api/notes/:id", authenticateToken, async (req, res) => {
+  try {
+    const deletedNote = await Note.findOneAndDelete({ _id: req.params.id, userId: req.user.id });
+    if (!deletedNote) return res.status(404).json({ error: "Note not found" });
+    res.json({ message: "Note deleted" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Upload and transcribe audio
+app.post("/api/upload-audio", authenticateToken, upload.single('audio'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "No audio file uploaded" });
+    }
+
+    if (!process.env.GEMINI_API_KEY) {
+      // Clean up uploaded file
+      fs.unlinkSync(req.file.path);
+      return res.status(500).json({ error: "Gemini API key not configured" });
+    }
+
+    // Read the audio file
+    const audioBuffer = fs.readFileSync(req.file.path);
+    const audioBase64 = audioBuffer.toString('base64');
+
+    // Determine MIME type based on file extension
+    const ext = path.extname(req.file.originalname).toLowerCase();
+    let mimeType = 'audio/mpeg'; // default
+    if (ext === '.wav') mimeType = 'audio/wav';
+    else if (ext === '.m4a') mimeType = 'audio/mp4';
+    else if (ext === '.mp3') mimeType = 'audio/mpeg';
+
+    // Use Gemini to transcribe
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    
+    const result = await model.generateContent([
+      {
+        inlineData: {
+          mimeType: mimeType,
+          data: audioBase64
+        }
+      },
+      "Please transcribe this audio file. Provide only the transcription text without any additional commentary."
+    ]);
+
+    const response = await result.response;
+    const transcription = response.text();
+
+    // Clean up uploaded file
+    fs.unlinkSync(req.file.path);
+
+    res.json({ transcription });
+  } catch (err) {
+    // Clean up file if it exists
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    console.error("Transcription error:", err);
+    res.status(500).json({ error: "Failed to transcribe audio" });
+  }
+});
+
+// Generic AI Process Endpoint
+app.post("/api/ai-process", authenticateToken, async (req, res) => {
+  try {
+    const { text, instruction, type } = req.body;
+
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ error: "Gemini API key not configured" });
+    }
+
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    
+    let prompt;
+    if (type === 'summary') {
+      prompt = `Please provide a concise and well-structured summary of the following text:\n\n${text}`;
+    } else if (type === 'refine') {
+      prompt = `Please refine the following text based on this instruction: "${instruction}".\n\nText:\n${text}\n\nReturn ONLY the refined text.`;
+    } else if (type === 'query') {
+      prompt = `Based on the following text, answer this question: "${instruction}"\n\nText:\n${text}`;
+    } else {
+      return res.status(400).json({ error: "Invalid process type" });
+    }
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const processedText = response.text();
+
+    res.json({ result: processedText });
+  } catch (err) {
+    console.error("AI Process Error:", err);
+    res.status(500).json({ error: "Failed to process with AI" });
   }
 });
 

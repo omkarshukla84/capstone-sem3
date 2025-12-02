@@ -1,0 +1,273 @@
+.note-detail-container {
+  min-height: 100vh;
+  background-color: #F9FAFB;
+  font-family: 'Inter', sans-serif;
+}
+
+.note-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 40px;
+  background-color: white;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.note-detail-content {
+  max-width: 1200px;
+  margin: 40px auto;
+  padding: 0 20px;
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 30px;
+}
+
+/* Main Note Section */
+.note-main {
+  background: white;
+  border-radius: 12px;
+  padding: 40px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.note-header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 20px;
+}
+
+.note-title-input {
+  font-size: 32px;
+  font-weight: 800;
+  border: none;
+  outline: none;
+  width: 100%;
+  color: #111827;
+  margin-bottom: 10px;
+}
+
+.note-title-input:disabled {
+  background: transparent;
+}
+
+.note-date-display {
+  font-size: 14px;
+  color: #6B7280;
+  margin-bottom: 30px;
+}
+
+.note-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6B7280;
+  padding: 8px;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.icon-btn:hover {
+  background-color: #F3F4F6;
+}
+
+.icon-btn.danger:hover {
+  background-color: #FEF2F2;
+  color: #EF4444;
+}
+
+.note-content-input {
+  width: 100%;
+  min-height: 400px;
+  border: none;
+  resize: vertical;
+  font-size: 16px;
+  line-height: 1.6;
+  color: #374151;
+  outline: none;
+  font-family: 'Inter', sans-serif;
+}
+
+.note-content-input:disabled {
+  background: transparent;
+}
+
+.note-tags-section {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #E5E7EB;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.btn-save {
+  background-color: #2563EB;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-cancel {
+  background-color: #F3F4F6;
+  color: #374151;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* AI Panel */
+.ai-panel {
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  height: fit-content;
+  position: sticky;
+  top: 20px;
+}
+
+.ai-panel-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ai-panel-title svg {
+  color: #8B5CF6;
+}
+
+.ai-action-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%);
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.ai-action-btn:hover {
+  opacity: 0.9;
+}
+
+.ai-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ai-divider {
+  text-align: center;
+  color: #9CA3AF;
+  font-size: 14px;
+  margin: 20px 0;
+  position: relative;
+}
+
+.ai-divider::before,
+.ai-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 40%;
+  height: 1px;
+  background-color: #E5E7EB;
+}
+
+.ai-divider::before {
+  left: 0;
+}
+
+.ai-divider::after {
+  right: 0;
+}
+
+.ai-question-input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  margin-bottom: 10px;
+  resize: vertical;
+  min-height: 80px;
+  font-family: 'Inter', sans-serif;
+}
+
+.ai-ask-btn {
+  width: 100%;
+  background-color: #6366F1;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ai-ask-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ai-response {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #F9FAFB;
+  border-radius: 8px;
+  border-left: 3px solid #8B5CF6;
+}
+
+.ai-response-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #8B5CF6;
+  margin-bottom: 10px;
+}
+
+.ai-response-text {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #374151;
+  white-space: pre-wrap;
+}
+
+.ai-loading {
+  text-align: center;
+  color: #6B7280;
+  padding: 20px;
+}
+
+@media (max-width: 1024px) {
+  .note-detail-content {
+    grid-template-columns: 1fr;
+  }
+  
+  .ai-panel {
+    position: static;
+  }
+}
