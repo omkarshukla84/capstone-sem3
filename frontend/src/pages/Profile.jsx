@@ -97,7 +97,7 @@ export default function Profile() {
               <div className="profile-avatar">
                 {user?.profilePicture ? (
                   <img 
-                    src={`http://localhost:5001${user.profilePicture}`} 
+                    src={user.profilePicture.startsWith('data:') ? user.profilePicture : `http://localhost:5001${user.profilePicture}`} 
                     alt="Profile" 
                     onError={(e) => { e.target.src = "https://via.placeholder.com/150?text=User"; }} 
                   />

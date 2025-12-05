@@ -77,8 +77,6 @@ export default function UploadAudio() {
         text: transcription,
         instruction: aiInstruction,
         type
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       });
 
       if (type === 'summary') {
@@ -118,7 +116,6 @@ export default function UploadAudio() {
 
       const { data } = await axios.post('/upload-audio', formData, {
         headers: { 
-          Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
         }
       });
@@ -162,8 +159,6 @@ export default function UploadAudio() {
         content: transcription,
         summary,
         tags
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       });
       navigate("/dashboard");
     } catch (error) {

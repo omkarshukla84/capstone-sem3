@@ -31,16 +31,13 @@ export default function Dashboard() {
     try {
       // Fetch User Info (only if not already fetched)
       if (!user) {
-        const userRes = await axios.get("/dashboard", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const userRes = await axios.get("/dashboard");
         const nameMatch = userRes.data.message.match(/Welcome (.*)!/);
         setUser({ name: nameMatch ? nameMatch[1] : "User" });
       }
 
       // Fetch Notes with params
       const notesRes = await axios.get("/notes", {
-        headers: { Authorization: `Bearer ${token}` },
         params: {
           filter: activeFilter,
           sort: sortOrder,
@@ -102,9 +99,7 @@ export default function Dashboard() {
     
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`/notes/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.delete(`/notes/${id}`);
       // Refresh data to handle pagination correctly after delete
       fetchData();
     } catch (err) {
@@ -159,7 +154,15 @@ export default function Dashboard() {
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               title="User Menu"
             >
-              {user?.name?.charAt(0) || "U"}
+              {user?.profilePicture ? (
+                <img 
+                  src={user.profilePicture.startsWith('data:') ? user.profilePicture : `http://localhost:5001${user.profilePicture}`} 
+                  alt="User" 
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                user?.name?.charAt(0) || "U"
+              )}
             </div>
             
             {isDropdownOpen && (

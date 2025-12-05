@@ -23,19 +23,14 @@ const __dirname = path.dirname(__filename);
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 
-// Configure multer for file uploads
+// Configure multer for memory storage (for Vercel support)
 const upload = multer({ 
-  dest: 'uploads/',
-  limits: { fileSize: 100 * 1024 * 1024 } // 100MB limit
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit (MongoDB doc limit is 16MB)
 });
 
-// Ensure uploads directory exists
-if (!fs.existsSync('uploads')) {
-  fs.mkdirSync('uploads');
-}
-
-// Serve static files from uploads directory
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Serve static files from uploads directory (keep for backward compatibility if needed, though we are moving to Base64)
+// app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 //Scehma
 const userSchema = new mongoose.Schema({
@@ -43,7 +38,7 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   phoneNumber: { type: String },
-  profilePicture: { type: String },
+  profilePicture: { type: String }, // Will store Base64 string
   createdAt: { type: Date, default: Date.now },
 });
 
@@ -202,10 +197,7 @@ app.put("/api/user", async (req, res) => {
 app.post("/api/user/avatar", upload.single('avatar'), async (req, res) => {
   console.log("POST /api/user/avatar called");
   const auth = req.headers.authorization;
-  if (!auth) {
-    if (req.file) fs.unlinkSync(req.file.path); // Clean up
-    return res.status(401).json({ error: "No token" });
-  }
+  if (!auth) return res.status(401).json({ error: "No token" });
 
   const token = auth.split(" ")[1];
   try {
@@ -216,19 +208,12 @@ app.post("/api/user/avatar", upload.single('avatar'), async (req, res) => {
       return res.status(400).json({ error: "No file uploaded" });
     }
     
-    console.log("File uploaded:", req.file);
+    console.log("File uploaded (memory):", req.file.originalname);
 
-    // Rename file with extension
-    const ext = path.extname(req.file.originalname);
-    const newFilename = `${req.file.filename}${ext}`;
-    const newPath = path.join('uploads', newFilename);
-    
-    fs.renameSync(req.file.path, newPath);
-    console.log("File renamed to:", newPath);
-
-    // Update user profile with image URL
-    // Assuming server is running on localhost:5001 or similar, we store relative path
-    const profilePicture = `/uploads/${newFilename}`;
+    // Convert buffer to Base64
+    const b64 = Buffer.from(req.file.buffer).toString('base64');
+    const mimeType = req.file.mimetype;
+    const profilePicture = `data:${mimeType};base64,${b64}`;
 
     const updatedUser = await User.findByIdAndUpdate(
       decoded.id,
@@ -236,11 +221,10 @@ app.post("/api/user/avatar", upload.single('avatar'), async (req, res) => {
       { new: true }
     ).select("-password");
 
-    console.log("User avatar updated:", updatedUser);
+    console.log("User avatar updated (Base64)");
     res.json({ profilePicture: updatedUser.profilePicture });
 
   } catch (err) {
-    if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
     console.error("Upload failed:", err);
     res.status(500).json({ error: "Upload failed" });
   }
@@ -411,21 +395,15 @@ app.post("/api/upload-audio", authenticateToken, upload.single('audio'), async (
     }
 
     if (!process.env.GEMINI_API_KEY) {
-      // Clean up uploaded file
-      fs.unlinkSync(req.file.path);
       return res.status(500).json({ error: "Gemini API key not configured" });
     }
 
-    // Read the audio file
-    const audioBuffer = fs.readFileSync(req.file.path);
+    // Read the audio file from buffer (memory storage)
+    const audioBuffer = req.file.buffer;
     const audioBase64 = audioBuffer.toString('base64');
 
-    // Determine MIME type based on file extension
-    const ext = path.extname(req.file.originalname).toLowerCase();
-    let mimeType = 'audio/mpeg'; // default
-    if (ext === '.wav') mimeType = 'audio/wav';
-    else if (ext === '.m4a') mimeType = 'audio/mp4';
-    else if (ext === '.mp3') mimeType = 'audio/mpeg';
+    // Determine MIME type based on file extension or mimetype
+    const mimeType = req.file.mimetype || 'audio/mpeg';
 
     // Use Gemini to transcribe
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
@@ -443,15 +421,8 @@ app.post("/api/upload-audio", authenticateToken, upload.single('audio'), async (
     const response = await result.response;
     const transcription = response.text();
 
-    // Clean up uploaded file
-    fs.unlinkSync(req.file.path);
-
     res.json({ transcription });
   } catch (err) {
-    // Clean up file if it exists
-    if (req.file && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
-    }
     console.error("Transcription error:", err);
     res.status(500).json({ error: "Failed to transcribe audio" });
   }
