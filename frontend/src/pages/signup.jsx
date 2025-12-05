@@ -1,18 +1,25 @@
 import { useState } from "react";
 import axios from "../utils/axiosInstance";
 import { useNavigate, Link } from "react-router-dom";
-import { Mail, Lock, Eye, EyeOff, User, AudioWaveform, RefreshCcw } from "lucide-react";
+import { Eye, EyeOff, AudioWaveform } from "lucide-react";
+
 import "./Auth.css";
 
 export default function Signup() {
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [form, setForm] = useState({ email: "", password: "", confirmPassword: "" });
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    if (form.password !== form.confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
 
     try {
       // Backend requires name, so we derive it from email or use a placeholder
@@ -31,40 +38,35 @@ export default function Signup() {
 
   return (
     <div className="auth-container">
-      <div className="auth-logo">
-        <div className="logo-icon">
-          <AudioWaveform size={24} />
-        </div>
-        <span>EchoNote</span>
-      </div>
-
       <div className="auth-card">
-        <h2 className="auth-title">Create your account</h2>
-        
-        {error && <div style={{color: 'red', marginBottom: '15px', textAlign: 'center'}}>{error}</div>}
+        <div className="auth-header">
+          <div className="brand-logo-simple">
+            <AudioWaveform size={28} color="white" />
+          </div>
+          <h1 className="auth-title">EchoNote</h1>
+          <h2 className="auth-heading">Create your account</h2>
+        </div>
 
-        <form onSubmit={handleSubmit}>
+        {error && <div className="auth-error">{error}</div>}
+
+        <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
             <label className="form-label">Email</label>
-            <div className="input-wrapper">
-              <Mail className="input-icon" size={20} />
-              <input 
-                className="form-input with-icon"
-                placeholder="Enter your email" 
-                type="email"
-                value={form.email}
-                onChange={(e)=>setForm({...form, email:e.target.value})}
-                required
-              />
-            </div>
+            <input 
+              className="form-input"
+              placeholder="Enter your email" 
+              type="email"
+              value={form.email}
+              onChange={(e)=>setForm({...form, email:e.target.value})}
+              required
+            />
           </div>
 
           <div className="form-group">
             <label className="form-label">Password</label>
-            <div className="input-wrapper">
-              <Lock className="input-icon" size={20} />
+            <div className="password-wrapper">
               <input 
-                className="form-input with-icon"
+                className="form-input"
                 placeholder="Enter your password" 
                 type={showPassword ? "text" : "password"} 
                 value={form.password}
@@ -73,7 +75,7 @@ export default function Signup() {
               />
               <button 
                 type="button" 
-                className="password-toggle"
+                className="password-toggle-simple"
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
@@ -81,10 +83,33 @@ export default function Signup() {
             </div>
           </div>
 
-          <button type="submit" className="auth-button">Register</button>
-          
-          <div className="auth-footer">
-            Already have an account? <Link to="/login" className="auth-link">Log in</Link>
+          <div className="form-group">
+            <label className="form-label">Confirm Password</label>
+            <div className="password-wrapper">
+              <input 
+                className="form-input"
+                placeholder="Confirm your password" 
+                type={showConfirmPassword ? "text" : "password"} 
+                value={form.confirmPassword}
+                onChange={(e)=>setForm({...form, confirmPassword:e.target.value})}
+                required
+              />
+              <button 
+                type="button" 
+                className="password-toggle-simple"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              >
+                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" className="auth-button-simple">
+            Register
+          </button>
+
+          <div className="auth-footer-simple">
+            Already have an account? <Link to="/login">Log in</Link>
           </div>
         </form>
       </div>

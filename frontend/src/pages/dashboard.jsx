@@ -164,7 +164,7 @@ export default function Dashboard() {
             
             {isDropdownOpen && (
               <div className="profile-dropdown">
-                <div className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
+                <div className="dropdown-item" onClick={() => { setIsDropdownOpen(false); navigate("/profile"); }}>
                   <User size={16} />
                   Profile
                 </div>

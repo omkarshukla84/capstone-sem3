@@ -151,12 +151,12 @@
 }
 
 .ai-panel-title svg {
-  color: #8B5CF6;
+  color: #0284C7;
 }
 
 .ai-action-btn {
   width: 100%;
-  background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%);
+  background: linear-gradient(135deg, #0284C7 0%, #075985 100%);
   color: white;
   border: none;
   padding: 12px;
@@ -220,7 +220,7 @@
 
 .ai-ask-btn {
   width: 100%;
-  background-color: #6366F1;
+  background-color: #0EA5E9;
   color: white;
   border: none;
   padding: 10px;
@@ -237,15 +237,15 @@
 .ai-response {
   margin-top: 20px;
   padding: 15px;
-  background-color: #F9FAFB;
+  background-color: #F0F9FF;
   border-radius: 8px;
-  border-left: 3px solid #8B5CF6;
+  border-left: 3px solid #0284C7;
 }
 
 .ai-response-title {
   font-size: 14px;
   font-weight: 600;
-  color: #8B5CF6;
+  color: #0284C7;
   margin-bottom: 10px;
 }
 

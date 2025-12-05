@@ -10,6 +10,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
+
 dotenv.config();
 
 const app = express();
@@ -21,17 +22,28 @@ const __dirname = path.dirname(__filename);
 // Initialize Gemini AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
+
 // Configure multer for file uploads
 const upload = multer({ 
   dest: 'uploads/',
   limits: { fileSize: 100 * 1024 * 1024 } // 100MB limit
 });
 
+// Ensure uploads directory exists
+if (!fs.existsSync('uploads')) {
+  fs.mkdirSync('uploads');
+}
+
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 //Scehma
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
+  phoneNumber: { type: String },
+  profilePicture: { type: String },
   createdAt: { type: Date, default: Date.now },
 });
 
@@ -116,6 +128,8 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
+
+
 //dashboard route
 app.get("/api/dashboard", async (req, res) => {
   const auth = req.headers.authorization;
@@ -132,6 +146,103 @@ app.get("/api/dashboard", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(401).json({ error: "Invalid token" });
+  }
+});
+
+// --- User Profile API ---
+
+// Get User Profile
+app.get("/api/user", async (req, res) => {
+  const auth = req.headers.authorization;
+  if (!auth) return res.status(401).json({ error: "No token" });
+
+  const token = auth.split(" ")[1];
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id).select("-password"); // Exclude password
+
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    res.json(user);
+  } catch (err) {
+    console.error(err);
+    res.status(401).json({ error: "Invalid token" });
+  }
+});
+
+// Update User Profile
+app.put("/api/user", async (req, res) => {
+  console.log("PUT /api/user called");
+  console.log("Body:", req.body);
+  const auth = req.headers.authorization;
+  if (!auth) return res.status(401).json({ error: "No token" });
+
+  const token = auth.split(" ")[1];
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const { name, phoneNumber } = req.body;
+
+    const updatedUser = await User.findByIdAndUpdate(
+      decoded.id,
+      { name, phoneNumber },
+      { new: true }
+    ).select("-password");
+
+    if (!updatedUser) return res.status(404).json({ error: "User not found" });
+    
+    console.log("User updated:", updatedUser);
+    res.json(updatedUser);
+  } catch (err) {
+    console.error("Update failed:", err);
+    res.status(400).json({ error: "Update failed" });
+  }
+});
+
+// Upload Profile Picture
+app.post("/api/user/avatar", upload.single('avatar'), async (req, res) => {
+  console.log("POST /api/user/avatar called");
+  const auth = req.headers.authorization;
+  if (!auth) {
+    if (req.file) fs.unlinkSync(req.file.path); // Clean up
+    return res.status(401).json({ error: "No token" });
+  }
+
+  const token = auth.split(" ")[1];
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    if (!req.file) {
+      console.log("No file uploaded");
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+    
+    console.log("File uploaded:", req.file);
+
+    // Rename file with extension
+    const ext = path.extname(req.file.originalname);
+    const newFilename = `${req.file.filename}${ext}`;
+    const newPath = path.join('uploads', newFilename);
+    
+    fs.renameSync(req.file.path, newPath);
+    console.log("File renamed to:", newPath);
+
+    // Update user profile with image URL
+    // Assuming server is running on localhost:5001 or similar, we store relative path
+    const profilePicture = `/uploads/${newFilename}`;
+
+    const updatedUser = await User.findByIdAndUpdate(
+      decoded.id,
+      { profilePicture },
+      { new: true }
+    ).select("-password");
+
+    console.log("User avatar updated:", updatedUser);
+    res.json({ profilePicture: updatedUser.profilePicture });
+
+  } catch (err) {
+    if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+    console.error("Upload failed:", err);
+    res.status(500).json({ error: "Upload failed" });
   }
 });
 
@@ -261,7 +372,7 @@ app.post("/api/notes/:id/ai", authenticateToken, async (req, res) => {
       return res.status(500).json({ error: "Gemini API key not configured" });
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     
     let prompt;
     if (action === "summary") {
@@ -317,7 +428,7 @@ app.post("/api/upload-audio", authenticateToken, upload.single('audio'), async (
     else if (ext === '.mp3') mimeType = 'audio/mpeg';
 
     // Use Gemini to transcribe
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     
     const result = await model.generateContent([
       {
@@ -355,7 +466,7 @@ app.post("/api/ai-process", authenticateToken, async (req, res) => {
       return res.status(500).json({ error: "Gemini API key not configured" });
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     
     let prompt;
     if (type === 'summary') {

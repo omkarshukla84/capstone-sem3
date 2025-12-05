@@ -5,6 +5,7 @@ import Dashboard from "./pages/dashboard";
 import LiveRecording from "./pages/LiveRecording";
 import NoteDetail from "./pages/NoteDetail";
 import UploadAudio from "./pages/UploadAudio";
+import Profile from "./pages/Profile";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -26,6 +27,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
             </ProtectedRoute>
           }
         />

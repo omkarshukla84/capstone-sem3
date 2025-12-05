@@ -2,6 +2,7 @@ import { useState } from "react";
 import axios from "../utils/axiosInstance";
 import { useNavigate, Link } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
+
 import "./Auth.css";
 
 export default function Login() {
@@ -25,29 +26,29 @@ export default function Login() {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <h2 className="auth-title">EchoNote</h2>
-        <p className="auth-subtitle">Your AI-Powered Note Assistant</p>
-        
-        {error && <div style={{color: 'red', marginBottom: '15px', textAlign: 'center'}}>{error}</div>}
+        <div className="auth-header">
+          <h1 className="auth-title">EchoNote</h1>
+          <p className="auth-subtitle">Your AI-Powered Note Assistant</p>
+        </div>
 
-        <form onSubmit={handleSubmit}>
+        {error && <div className="auth-error">{error}</div>}
+
+        <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
             <label className="form-label">Email</label>
-            <div className="input-wrapper">
-              <input 
-                className="form-input"
-                placeholder="Enter your email address" 
-                type="email"
-                value={form.email}
-                onChange={(e)=>setForm({...form, email:e.target.value})}
-                required
-              />
-            </div>
+            <input 
+              className="form-input"
+              placeholder="Enter your email address" 
+              type="email"
+              value={form.email}
+              onChange={(e)=>setForm({...form, email:e.target.value})}
+              required
+            />
           </div>
 
           <div className="form-group">
             <label className="form-label">Password</label>
-            <div className="input-wrapper">
+            <div className="password-wrapper">
               <input 
                 className="form-input"
                 placeholder="Enter your password" 
@@ -58,7 +59,7 @@ export default function Login() {
               />
               <button 
                 type="button" 
-                className="password-toggle"
+                className="password-toggle-simple"
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
@@ -66,18 +67,20 @@ export default function Login() {
             </div>
           </div>
 
-          <div className="form-actions">
+          <div className="form-actions-simple">
             <label className="remember-me">
               <input type="checkbox" />
-              Remember me
+              <span>Remember me</span>
             </label>
-            <a href="#" className="forgot-password">Forgot password?</a>
+            <a href="#" className="forgot-password-link">Forgot password?</a>
           </div>
 
-          <button type="submit" className="auth-button">Login</button>
-          
-          <div className="auth-footer">
-            Don't have an account? <Link to="/signup" className="auth-link">Register</Link>
+          <button type="submit" className="auth-button-simple">
+            Login
+          </button>
+
+          <div className="auth-footer-simple">
+            Don't have an account? <Link to="/signup">Register</Link>
           </div>
         </form>
       </div>
